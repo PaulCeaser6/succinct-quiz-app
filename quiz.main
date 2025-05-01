@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Succinct Quiz</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px;
+    }
+    #quiz-container {
+      background: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 700px;
+      width: 100%;
+      position: relative;
+    }
+    h1 {
+      color: #cc0077;
+    }
+    .progress {
+      font-size: 16px;
+      margin-bottom: 8px;
+      color: #555;
+    }
+    .progress-bar-wrapper {
+      width: 100%;
+      height: 10px;
+      background-color: #eee;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+    .progress-bar {
+      height: 100%;
+      background-color: #ff69b4;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .question {
+      font-size: 20px;
+      margin-bottom: 20px;
+      color: #333;
+    }
+    .option {
+      display: block;
+      margin: 10px 0;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      transition: background 0.3s, color 0.3s, border 0.3s;
+    }
+    .option.correct {
+      background-color: #b2f2bb !important;
+      border-color: #5cb85c;
+      color: #084c00;
+    }
+    .option.wrong {
+      background-color: #ffc9c9 !important;
+      border-color: #ff4d4d;
+      color: #990000;
+    }
+    #result {
+      font-size: 22px;
+      margin-top: 20px;
+    }
+    .answers {
+      margin-top: 30px;
+    }
+    .answers h3 {
+      margin-bottom: 10px;
+      color: #cc0077;
+    }
+    .answer-block {
+      margin-bottom: 15px;
+      background: #fafafa;
+      border-left: 4px solid #ffaad4;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .btn-group {
+      margin-top: 30px;
+    }
+    button.action-btn {
+      background-color: #cc0077;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button.action-btn:hover {
+      background-color: #aa0062;
+    }
+    .watermark {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      opacity: 0.08;
+      z-index: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>Succinct Vibe Quiz</h1>
+  <div id="quiz-container">
+    <div id="progress" class="progress"></div>
+    <div class="progress-bar-wrapper"><div id="bar" class="progress-bar"></div></div>
+    <div id="question" class="question"></div>
+    <div id="options"></div>
+    <div id="result"></div>
+    <img src="https://assets-global.website-files.com/63922b0735d29e0e0cd1173f/63e3dfb734dc3de7331463ae_succinct-logo.svg" 
+         alt="Succinct Logo" class="watermark" width="120">
+    <div class="btn-group" id="end-actions" style="display:none;">
+      <button class="action-btn" onclick="restartQuiz()">Restart Quiz</button>
+    </div>
+  </div>
+
+  <script>
+    const quizData = [
+      {
+        question: "What does ZK stand for in ZK Rollups?",
+        options: ["Zero-Knowledge", "Zeta Kernel", "Zip Key", "Zoom Keeper"],
+        answer: 0
+      },
+      {
+        question: "Which chain is Succinct closely associated with?",
+        options: ["Bitcoin", "Solana", "Ethereum", "Dogecoin"],
+        answer: 2
+      },
+      {
+        question: "What does Succinct aim to make more efficient?",
+        options: ["Gas stations", "Proof generation", "Coffee machines", "NFTs"],
+        answer: 1
+      },
+      {
+        question: "What are ZK proofs used for?",
+        options: ["Making memes", "Hiding smart contracts", "Proving something is true without revealing the data", "Compressing images"],
+        answer: 2
+      },
+      {
+        question: "What kind of technology is used in Succinct’s infrastructure?",
+        options: ["Web2 APIs", "Machine learning", "Zero-Knowledge cryptography", "Java Applets"],
+        answer: 2
+      },
+      {
+        question: "Which layer does Succinct help scale?",
+        options: ["Layer 0", "Layer 1", "Layer 3", "Layer Cake"],
+        answer: 1
+      },
+      {
+        question: "What is the goal of Succinct’s zk-access proofs?",
+        options: ["To verify memes on-chain", "To let smart contracts access off-chain data securely", "To replace miners", "To calculate gas prices"],
+        answer: 1
+      },
+      {
+        question: "What makes zk-SNARKs special?",
+        options: ["They're fast and private", "They use AI", "They're stored in JPEG format", "They are only for NFTs"],
+        answer: 0
+      },
+      {
+        question: "Succinct’s work helps developers build apps that are...",
+        options: ["Slower but prettier", "Transparent and efficient", "Centralized and expensive", "Off-chain only"],
+        answer: 1
+      },
+      {
+        question: "Why are ZK rollups important for Ethereum?",
+        options: ["They increase pizza delivery speed", "They reduce gas fees and improve scalability", "They create more meme coins", "They power the Metaverse"],
+        answer: 1
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+
+    const questionDiv = document.getElementById("question");
+    const optionsDiv = document.getElementById("options");
+    const resultDiv = document.getElementById("result");
+    const progressDiv = document.getElementById("progress");
+    const progressBar = document.getElementById("bar");
+    const endActions = document.getElementById("end-actions");
+
+    function loadQuestion() {
+      const q = quizData[currentQuestion];
+      questionDiv.innerText = q.question;
+      optionsDiv.innerHTML = "";
+      resultDiv.innerText = "";
+      updateProgress();
+
+      q.options.forEach((option, i) => {
+        const btn = document.createElement("button");
+        btn.className = "option";
+        btn.innerText = option;
+        btn.addEventListener("click", () => handleAnswer(i, btn));
+        optionsDiv.appendChild(btn);
+      });
+    }
+
+    function updateProgress() {
+      const questionNum = currentQuestion + 1;
+      const total = quizData.length;
+      const percent = Math.round((questionNum / total) * 100);
+      progressDiv.innerText = `Question ${questionNum} of ${total} (${percent}%)`;
+      progressBar.style.width = `${percent}%`;
+    }
+
+    function handleAnswer(selectedIndex, btn) {
+      const correctIndex = quizData[currentQuestion].answer;
+      const buttons = document.querySelectorAll(".option");
+
+      buttons.forEach(b => b.disabled = true);
+
+      if (selectedIndex === correctIndex) {
+        btn.classList.add("correct");
+        score++;
+      } else {
+        btn.classList.add("wrong");
+        buttons[correctIndex].classList.add("correct");
+      }
+
+      setTimeout(() => {
+        currentQuestion++;
+        if (currentQuestion < quizData.length) {
+          loadQuestion();
+        } else {
+          showResult();
+        }
+      }, 1200);
+    }
+
+    function showResult() {
+      questionDiv.style.display = "none";
+      optionsDiv.style.display = "none";
+      progressDiv.style.display = "none";
+      progressBar.parentElement.style.display = "none";
+
+      resultDiv.innerHTML = `<strong>🎉 Quiz Completed!</strong><br>You scored <strong>${score}</strong> out of <strong>${quizData.length}</strong>.`;
+
+      const answersDiv = document.createElement("div");
+      answersDiv.className = "answers";
+      answersDiv.innerHTML = "<h3>Correct Answers</h3>";
+
+      quizData.forEach((q, index) => {
+        const block = document.createElement("div");
+        block.className = "answer-block";
+        block.innerHTML = `<strong>Q${index + 1}:</strong> ${q.question}<br><em>Answer:</em> ${q.options[q.answer]}`;
+        answersDiv.appendChild(block);
+      });
+
+      document.getElementById("quiz-container").appendChild(answersDiv);
+      endActions.style.display = "block";
+    }
+
+    function restartQuiz() {
+      currentQuestion = 0;
+      score = 0;
+      questionDiv.style.display = "block";
+      optionsDiv.style.display = "block";
+      progressDiv.style.display = "block";
+      progressBar.parentElement.style.display = "block";
+      document.querySelector(".answers")?.remove();
+      resultDiv.innerHTML = "";
+      loadQuestion();
+    }
+
+    loadQuestion();
+  </script>
+</body>
+</html>
